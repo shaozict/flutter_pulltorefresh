@@ -25,7 +25,7 @@ Widget buildRefresher(RefreshController controller, {int count: 20}) {
           enablePullUp: true,
           child: ListView.builder(
             itemBuilder: (c, i) => Text(data[i]),
-            itemCount: 0,
+            itemCount: count,
             itemExtent: 100,
           ),
           controller: controller,
@@ -52,7 +52,7 @@ void testRequestFun(bool full) {
     await tester.pumpAndSettle(const Duration(milliseconds: 500));
     expect(_refreshController.headerStatus, RefreshStatus.idle);
 
-    _refreshController.position.jumpTo(200.0);
+    _refreshController.position!.jumpTo(200.0);
     _refreshController.requestRefresh(
         duration: Duration(milliseconds: 500), curve: Curves.linear);
     await tester.pumpAndSettle();
@@ -66,13 +66,51 @@ void testRequestFun(bool full) {
     _refreshController.loadComplete();
     await tester.pump(Duration(milliseconds: 200));
     await tester.pumpAndSettle(Duration(milliseconds: 2000));
-    _refreshController.position.jumpTo(0);
+    _refreshController.position!.jumpTo(0);
     _refreshController.requestTwoLevel();
     await tester.pumpAndSettle(Duration(milliseconds: 200));
     expect(_refreshController.headerStatus, RefreshStatus.twoLeveling);
     _refreshController.twoLevelComplete();
     await tester.pumpAndSettle();
     expect(_refreshController.headerStatus, RefreshStatus.idle);
+  });
+
+  testWidgets("requestRefresh needCallBack test", (tester) async {
+    final RefreshController _refreshController =
+        RefreshController(initialRefresh: false);
+    int timerr = 0;
+    await tester.pumpWidget(Directionality(
+      textDirection: TextDirection.ltr,
+      child: Container(
+        width: 375.0,
+        height: 690.0,
+        child: SmartRefresher(
+          header: TestHeader(),
+          footer: TestFooter(),
+          enablePullDown: true,
+          enablePullUp: true,
+          onRefresh: () {
+            timerr++;
+          },
+          onLoading: () {
+            timerr++;
+          },
+          child: ListView.builder(
+            itemBuilder: (c, i) => Text(data[i]),
+            itemCount: 20,
+            itemExtent: 100,
+          ),
+          controller: _refreshController,
+        ),
+      ),
+    ));
+    _refreshController.requestRefresh(needCallback: false);
+    await tester.pumpAndSettle();
+    expect(timerr, 0);
+
+    _refreshController.requestLoading(needCallback: false);
+    await tester.pumpAndSettle();
+    expect(timerr, 0);
   });
 }
 
@@ -82,9 +120,9 @@ void main() {
         initialRefreshStatus: RefreshStatus.idle,
         initialLoadStatus: LoadStatus.noMore);
 
-    expect(_refreshController.headerMode.value, RefreshStatus.idle);
+    expect(_refreshController.headerMode!.value, RefreshStatus.idle);
 
-    expect(_refreshController.footerMode.value, LoadStatus.noMore);
+    expect(_refreshController.footerMode!.value, LoadStatus.noMore);
   });
 
   testWidgets(
@@ -94,17 +132,17 @@ void main() {
         initialLoadStatus: LoadStatus.loading,
         initialRefreshStatus: RefreshStatus.refreshing);
     _refreshController.refreshCompleted(resetFooterState: true);
-    expect(_refreshController.footerMode.value, LoadStatus.loading);
+    expect(_refreshController.footerMode!.value, LoadStatus.loading);
 
-    _refreshController.headerMode.value = RefreshStatus.refreshing;
-    _refreshController.footerMode.value = LoadStatus.noMore;
+    _refreshController.headerMode!.value = RefreshStatus.refreshing;
+    _refreshController.footerMode!.value = LoadStatus.noMore;
     _refreshController.refreshCompleted(resetFooterState: true);
-    expect(_refreshController.footerMode.value, LoadStatus.idle);
+    expect(_refreshController.footerMode!.value, LoadStatus.idle);
 
-    _refreshController.headerMode.value = RefreshStatus.refreshing;
-    _refreshController.footerMode.value = LoadStatus.noMore;
+    _refreshController.headerMode!.value = RefreshStatus.refreshing;
+    _refreshController.footerMode!.value = LoadStatus.noMore;
     _refreshController.resetNoData();
-    expect(_refreshController.footerMode.value, LoadStatus.idle);
+    expect(_refreshController.footerMode!.value, LoadStatus.idle);
   });
 
   testRequestFun(true);
